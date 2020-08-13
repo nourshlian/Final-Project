@@ -10,10 +10,10 @@ from ping3 import ping
 from dns_timings import measure_dns
 import re
 from subprocess import call
-
+import subprocess
 
 chrome_driver_path = "C:\\Users\\Computer\\Desktop\\chromedriver.exe" # path to chrome web driver
-browsermob_proxy_path = "C:\\Users\\Computer\\Desktop\\browsermob-proxy-2.1.4\\bin\\browsermob-proxy.bat" # path to firefox web driver
+browsermob_proxy_path = "/home/nour/Desktop/Final-Project/browsermob-proxy-2.1.4/bin/browsermob-proxy" # path to firefox web driver
 
 
 def chrome_browser(proxy):
@@ -100,6 +100,22 @@ def configure_server(proxy):
                 rv = database.insert_har(experiment, website, browser, recursive, operation_sys, dns, har, har_uuid, None, delay)
                 if not rv:
                     print("Saved HAR for website {}".format(website))
+                print("===========================================================")
+                
+                if dns == "dot":
+
+                    if resolver == '1.1.1.1':
+                        subprocess.run(["sudo", "stubby", "-C", "stubby_conf/stubby-cf.yml", "-g"])
+                        subprocess.run(["sudo", "cp", "stubby_conf/resolv.conf", "/etc/resolv.conf"])
+                    elif resolver == '9.9.9.9':
+                        subprocess.run(["sudo", "stubby", "-C", "stubby_conf/stubby-quad9.yml", "-g"])
+                        subprocess.run(["sudo", "cp", "stubby_conf/resolv.conf", "/etc/resolv.conf"])
+                    elif resolver == '8.8.8.8':
+                        subprocess.run(["sudo", "stubby", "-C", "stubby_conf/stubby-google.yml", "-g"])
+                        subprocess.run(["sudo", "cp", "stubby_conf/resolv.conf", "/etc/resolv.conf"])
+
+
+
                 if dns == "doh":
                     resolver = convert_resolver(resolver)
                 try:
@@ -175,11 +191,11 @@ def container():
     database = configure_database()
     #resolver, operation_sys = configure_dns()
     resolver = "1.1.1.1"
-    operation_sys = "Windows"
+    operation_sys = "Linux"
     recursive = convert_recursive(resolver)
     websites = configure_websites()
     browsers = configure_browsers()
-    dns_type = ["dns"]
+    dns_type = ["dot"]
     delay = ping_resolver(resolver)
     return database, resolver, recursive, operation_sys, websites, browsers, dns_type, delay
 

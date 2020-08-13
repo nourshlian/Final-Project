@@ -24,14 +24,9 @@ def measure_dns(website, har, dns_type, resolver, operation_sys):
         elif dns_type == 'doh':
             dns_opt = 'doh'
 
-        if operation_sys == "Linux":
-            cmd = ["dns-timing/dns-timing", dns_opt, resolver, domains_filename]
-            output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-        elif operation_sys == "Windows":
-            cmd = []
-        elif operation_sys == "Darwin":
-            cmd = []
 
+        cmd = ["dns-timing/dns-timing", dns_opt, resolver, domains_filename]
+        output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
         output = output.decode('utf-8')
         all_dns_info = parse_output(output, website, domains)
         os.remove(domains_filename)
