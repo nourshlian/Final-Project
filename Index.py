@@ -12,8 +12,8 @@ import re
 from subprocess import call
 import subprocess
 
-chrome_driver_path = "C:\\Users\\Computer\\Desktop\\chromedriver.exe" # path to chrome web driver
-browsermob_proxy_path = "/home/nour/Desktop/Final-Project/browsermob-proxy-2.1.4/bin/browsermob-proxy" # path to firefox web driver
+chrome_driver_path = "C:\\Users\\Computer\\Desktop\\chromedriver.exe"  # path to chrome web driver
+browsermob_proxy_path = "/home/nour/Desktop/Final-Project/browsermob-proxy-2.1.4/bin/browsermob-proxy"  # path to firefox web driver
 
 
 def chrome_browser(proxy):
@@ -89,6 +89,19 @@ def configure_server(proxy):
             driver = firefox_browser(proxy)
             print("=====> Using Firefox <=====")
         for dns in dns_type:
+            if dns == "dot" and operation_sys == "Linux":
+                with open("stubby_conf/resolv.conf","w") as f:
+                    f.write("nameserver 127.0.0.1")
+
+                if resolver == '1.1.1.1':
+                    subprocess.run(["sudo", "stubby", "-C", "stubby_conf/stubby-cf.yml", "-g"])
+                    subprocess.run(["sudo", "cp", "stubby_conf/resolv.conf", "/etc/resolv.conf"])
+                elif resolver == '9.9.9.9':
+                    subprocess.run(["sudo", "stubby", "-C", "stubby_conf/stubby-quad9.yml", "-g"])
+                    subprocess.run(["sudo", "cp", "stubby_conf/resolv.conf", "/etc/resolv.conf"])
+                elif resolver == '8.8.8.8':
+                    subprocess.run(["sudo", "stubby", "-C", "stubby_conf/stubby-google.yml", "-g"])
+                    subprocess.run(["sudo", "cp", "stubby_conf/resolv.conf", "/etc/resolv.conf"])
             for website in websites:
                 har_uuid = uuid.uuid1()
                 print("===========================================================")
@@ -97,31 +110,20 @@ def configure_server(proxy):
                 proxy.new_har("https://{}".format(website), options={'captureHeaders': True})
                 driver.get("https://{}".format(website))
                 har = json.loads(json.dumps(proxy.har))
-                rv = database.insert_har(experiment, website, browser, recursive, operation_sys, dns, har, har_uuid, None, delay)
+                rv = database.insert_har(experiment, website, browser, recursive, operation_sys, dns, har, har_uuid,
+                                         None, delay)
                 if not rv:
                     print("Saved HAR for website {}".format(website))
                 print("===========================================================")
-                
-                if dns == "dot":
-
-                    if resolver == '1.1.1.1':
-                        subprocess.run(["sudo", "stubby", "-C", "stubby_conf/stubby-cf.yml", "-g"])
-                        subprocess.run(["sudo", "cp", "stubby_conf/resolv.conf", "/etc/resolv.conf"])
-                    elif resolver == '9.9.9.9':
-                        subprocess.run(["sudo", "stubby", "-C", "stubby_conf/stubby-quad9.yml", "-g"])
-                        subprocess.run(["sudo", "cp", "stubby_conf/resolv.conf", "/etc/resolv.conf"])
-                    elif resolver == '8.8.8.8':
-                        subprocess.run(["sudo", "stubby", "-C", "stubby_conf/stubby-google.yml", "-g"])
-                        subprocess.run(["sudo", "cp", "stubby_conf/resolv.conf", "/etc/resolv.conf"])
-
-
 
                 if dns == "doh":
                     resolver = convert_resolver(resolver)
                 try:
-                    dns_info = measure_dns(website, har, dns, resolver, operation_sys)
+                   # print("1 ",website," ", har," ",dns , " ", resolver , " ",operation_sys)
+                    dns_info = measure_dns(website, har, dns, resolver)
                     if dns_info:
-                        rv_dns = database.insert_dns(har_uuid, experiment, browser, recursive, operation_sys, dns, dns_info)
+                        rv_dns = database.insert_dns(har_uuid, experiment, browser, recursive, operation_sys, dns,
+                                                     dns_info)
                         if not rv_dns:
                             print("Saved DNS for website {}".format(website))
                             print("===========================================================\n")
@@ -130,6 +132,10 @@ def configure_server(proxy):
 
                 except:
                     print("An exception occurred! Please try again later.")
+        if dns == "dot" and operation_sys == "Linux":
+            with open("stubby_conf/resolv.conf", "w") as f:
+                f.write("nameserver 8.8.8.8")
+            subprocess.run(["sudo", "cp", "stubby_conf/resolv.conf", "/etc/resolv.conf"])
 
         driver.quit()
 
@@ -143,6 +149,8 @@ def configure_database():
 def configure_websites():
     webs = open("websites.txt", "r")
     websites = webs.read().split('\n')
+    if websites[-1] == '':
+        del websites[-1]
     webs.close()
     return websites
 
@@ -189,7 +197,7 @@ def configure_browsers():
 
 def container():
     database = configure_database()
-    #resolver, operation_sys = configure_dns()
+    # resolver, operation_sys = configure_dns()
     resolver = "1.1.1.1"
     operation_sys = "Linux"
     recursive = convert_recursive(resolver)
