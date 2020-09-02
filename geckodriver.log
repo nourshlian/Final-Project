@@ -97,3 +97,9 @@ JavaScript error: https://1.1.1.1/help-89ab2dd1c66db113ee96.js, line 1: TypeErro
 1596989320564	Marionette	INFO	Stopped listening on port 39053
 1596989322699	Marionette	INFO	Stopped listening on port 44303
 1596989325699	Marionette	INFO	Stopped listening on port 44329
+1599048771583	geckodriver	INFO	Listening on 127.0.0.1:44455
+1599048772590	mozrunner::runner	INFO	Running command: "/usr/bin/firefox" "--marionette" "-foreground" "-no-remote" "-profile" "/tmp/rust_mozprofileMla6mE"
+console.error: SearchCache: "_readCacheFile: Error reading cache file:" (new Error("", "(unknown module)"))
+1599048776345	Marionette	INFO	Listening on port 38451
+1599048776426	Marionette	WARN	TLS certificate errors will be ignored for this session
+1599048788696	Marionette	INFO	Stopped listening on port 38451
